@@ -1,0 +1,1 @@
+symbols = ['AMD','AAL','AAPL','T','BAC','BA','CCL','C','XOM','FB','F','GE','GM','INTC','JPM','MU','MSFT','PFE','DIS','WFC','SPY','QQQ','IWM','GLD','XLE','XLY','DIA','SLV','EEM','XLF','USO','HYG','EFA','FXI','GDX','EWZ','XOP','VXX','TLT','LQD','UPS','UUP','SQQQ','NIO','ROKU','QCOM','NIO','V','LLY','MU','MRNA','JD','SPLK','CRWD','BABA','VA']
