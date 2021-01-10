@@ -1,0 +1,40 @@
+<html>
+    <head>
+        {% extends 'layout.html' %}
+    </head>
+
+    <body>
+        {% block content %}
+    
+        <h1>{{ stock.name }}</h1>
+        <h2>{{ stock.symbol }}</h2>
+        <table class="ui selectable inverted table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Open</th>
+                    <th>High</th>
+                    <th>Low</th>
+                    <th>Close</th>
+                    <th>Volume</th>
+                </tr> 
+                <tbody>
+                    {% for bar in bars %}
+                    <tr>
+                        <td>{{ bar.date }}</td>
+                        <td>{{ bar.open }}</td>
+                        <td>{{ bar.high }}</td>
+                        <td>{{ bar.low }}</td>
+                        <td>{{ bar.close }}</td>
+                        <td>{{ bar.volume }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+              
+            </thead>
+            <tbody>
+        {% endblock content %}
+    </body>
+  
+</html>
+

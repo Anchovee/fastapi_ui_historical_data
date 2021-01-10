@@ -1,0 +1,34 @@
+<html>
+
+    <head>
+        {% extends 'layout.html' %}
+        <title>I'm gaymers</title>
+        
+    </head>
+    <body>
+        {% block content %}
+        
+            <h1>Stocklist</h1>
+
+            <table class="ui selectable inverted table">
+            <thead>
+              <tr>
+                <th>Symbol</th>
+                <th>Name</th>
+              </tr>
+            </thead>
+            <tbody>
+                {% for stock in stocks %}
+                <tr>
+                    <td>{{ stock.symbol }}</td>
+                    <td><a href= "/stock/{{ stock.symbol }}">{{ stock.name }}</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+          </table>
+        
+    {% endblock content %}    
+    </body>
+    
+    
+</html>
