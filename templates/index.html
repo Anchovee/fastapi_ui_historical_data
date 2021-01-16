@@ -1,6 +1,4 @@
-<html>
 
-    <head>
         {% extends 'layout.html' %}
         <title>I'm gaymers</title>
         
@@ -9,14 +7,17 @@
         {% block content %}
         
             <h1>Stocklist</h1>
-
+           
             <form method="get">
               <select name = "filter">
                 <option value="">All Stocks</option>
-                <option value="new_intraday_highs">New Intraday Highs</option>
-                <option value="new_closing_highs">New Closing Highs</option>
-                <option value="new_intraday_lows">New Intraday Lows</option>
-                <option value="new_closing_lows">New Closing Lows</option>
+                <option {% if request.query_params.filter == 'new_closing_highs' %}selected="selected" {% endif %} value="new_closing_highs">New Closing Highs</option>
+                <option {% if request.query_params.filter == 'new_closing_lows' %}selected="selected" {% endif %} value="new_closing_lows">New Closing Lows</option>
+                <option {% if request.query_params.filter == 'rsi_overbought' %}selected="selected" {% endif %} value="rsi_overbought">Overbought</option>
+                <option {% if request.query_params.filter == 'rsi_oversold' %}selected="selected" {% endif %} value="rsi_oversold">Oversold</option>
+                <option {% if request.query_params.filter == 'below_ma_oversold' %}selected="selected" {% endif %} value="below_ma_oversold">Oversold_sma</option>
+                
+
               </select>
               <input type="submit">
             </form>
@@ -25,6 +26,11 @@
               <tr>
                 <th>Symbol</th>
                 <th>Name</th>
+                <th>Price</th>
+                <th>RSI 14</th>
+                <th>SMA 20</th>
+                <th>SMA 50</th>
+                
               </tr>
             </thead>
             <tbody>
@@ -32,13 +38,32 @@
                 <tr>
                     <td>{{ stock.symbol }}</td>
                     <td><a href= "/stock/{{ stock.symbol }}">{{ stock.name }}</a></td>
-                </tr>
-                {% endfor %}
+                    {% if indicator_values[stock.symbol] %}
+                      {% if indicator_values[stock.symbol].close %}
+                      <td>{{ indicator_values[stock.symbol].close|round(2) }}</td>
+                        {% else %}
+                        <td>N/A</td>
+                        {% endif %}
+                      {% if indicator_values[stock.symbol].rsi_14 %}
+                        <td>{{ indicator_values[stock.symbol].rsi_14|round(2) }}</td>
+                        {% else %}
+                        <td>N/A</td>
+                      {% endif %}
+                      {% if indicator_values[stock.symbol].sma_20 %}
+                      <td>{{ indicator_values[stock.symbol].sma_20|round(2)}}</td>
+                        {% else %}
+                        <td>N/A</td>
+                      {% endif %}
+                      {% if indicator_values[stock.symbol].sma_50 %}
+                      <td>{{ indicator_values[stock.symbol].sma_50|round(2) }}</td>
+                        {% else %}
+                        <td>N/A</td>
+                      {% endif %}
+                    {% endif %}
+                  </tr>
+              {% endfor %}
             </tbody>
           </table>
         
     {% endblock content %}    
-    </body>
-    
-    
-</html>
+ 
