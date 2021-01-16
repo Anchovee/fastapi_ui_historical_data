@@ -2,7 +2,9 @@ import sqlite3, config, datetime
 from fastapi import Request, FastAPI, Form
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
+from datetime import date
 
+import alpaca_trade_api as tradeapi
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
@@ -23,16 +25,57 @@ def index(request: Request):
             FROM stock_price join stock on stock.id = stock_price.stock_id
             GROUP BY stock_id
             ORDER BY symbol
-        ) WHERE date = ?
-        """, ('2021-01-05',))#(datetime.datetime.utcnow().date().isoformat(),))
+        ) WHERE date = (SELECT max(date) FROM stock_price)
+        """)#(datetime.datetime.utcnow().date().isoformat(),))
+    elif stock_filter =='new_closing_lows':
+        cursor.execute("""
+        SELECT * FROM (
+            SELECT symbol, name, stock_id, min(close), date
+            FROM stock_price join stock on stock.id = stock_price.stock_id
+            GROUP BY stock_id
+            ORDER BY symbol
+        ) WHERE date = (SELECT max(date) FROM stock_price)
+        """)#(datetime.datetime.utcnow().date().isoformat(),))
+    elif stock_filter =='rsi_overbought':
+        cursor.execute("""
+            SELECT symbol, name, stock_id, date
+            FROM stock_price join stock on stock.id = stock_price.stock_id
+            WHERE rsi_14 > 70 and date = (SELECT max(date) FROM stock_price)
+            ORDER BY symbol
+        """)
+    elif stock_filter =='rsi_oversold':
+        cursor.execute(""" 
+        SELECT symbol, name, stock_id, date
+            FROM stock_price join stock on stock.id = stock_price.stock_id
+            WHERE rsi_14 < 30 and date = (SELECT max(date) FROM stock_price)
+            ORDER BY symbol
+        """)    
+    elif stock_filter =='below_ma_oversold':
+        cursor.execute(""" 
+        SELECT symbol, name, stock_id, date
+            FROM stock_price join stock on stock.id = stock_price.stock_id
+            WHERE rsi_14 < 30 and date = (SELECT max(date) FROM stock_price)
+            and close < sma_20 
+            ORDER BY symbol
+        """)    
     else: 
         cursor.execute("""
             SELECT id, symbol, name FROM stock ORDER BY symbol
             """)
-    #dictionary db object where you get attributes
     rows = cursor.fetchall()
+    #dictionary db object where you get attributes
+    cursor.execute("""
+        SELECT symbol, rsi_14, sma_20, sma_50, close
+        FROM stock JOIN stock_price ON stock_price.stock_id = stock.id
+        WHERE date = (SELECT max(date) FROM stock_price)
+    """)
+    indicator_rows = cursor.fetchall()
+    indicator_values = {}
+
+    for row in indicator_rows:
+        indicator_values[row['symbol']] = row
     
-    return templates.TemplateResponse("index.html", {"request": request, "stocks": rows})
+    return templates.TemplateResponse("index.html", {"request": request, "stocks": rows, "indicator_values": indicator_values})
 
 @app.get("/stock/{symbol}")
 def stock_detail(request: Request, symbol):
@@ -47,7 +90,7 @@ def stock_detail(request: Request, symbol):
     strategies = cursor.fetchall()
 
     cursor.execute("""
-        SELECT id, symbol, exchange name FROM stock WHERE symbol = ?
+        SELECT id, symbol, exchange, name FROM stock WHERE symbol = ?
         """, (symbol,))
 
     row =  cursor.fetchone()
@@ -96,3 +139,23 @@ def strategy(request: Request, strategy_id):
     stocks = cursor.fetchall()
 
     return templates.TemplateResponse("strategy.html", {"request": request, "stocks": stocks, "strategy": strategy})
+
+@app.get("/strategies")
+def strategies(request: Request):
+    connection = sqlite3.connect(config.DB_FILE)
+    connection.row_factory = sqlite3.Row
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT * from strategy
+    """)
+
+    strategies = cursor.fetchall()
+    return templates.TemplateResponse("strategies.html", {'request': request, "strategies":strategies})
+
+@app.get("/orders")
+def strategies(request: Request):
+    api = tradeapi.REST(config.API_KEY, config.SECRET_KEY, base_url=config.BASE_URL)
+    orders = api.list_orders(status='all')
+
+    return templates.TemplateResponse("orders.html", {'request': request, 'orders': orders})

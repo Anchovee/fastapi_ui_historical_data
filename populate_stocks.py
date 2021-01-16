@@ -28,7 +28,7 @@ for asset in assets:
     try:
         if asset.symbol not in symbols and asset.status == 'active':
             print(f'Added a new stock {asset.symbol} {asset.name}')
-            cursor.execute("INSERT INTO stock (symbol, name, exchange) VALUES (?, ?, ?)", (asset.symbol, asset.name, asset.exchange))
+            cursor.execute("INSERT INTO stock (symbol, name, exchange, shortable) VALUES (?, ?, ?, ?)", (asset.symbol, asset.name, asset.exchange, asset.shortable))
     except Exception as e:
         print(asset.symbol, e)
 connection.commit()

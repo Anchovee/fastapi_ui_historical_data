@@ -1,5 +1,5 @@
 import smtplib, ssl, config
-
+import tulipy, numpy
 context = ssl.create_default_context()
 def email(messages):
     with smtplib.SMTP_SSL(config.EMAIL_HOST, config.EMAIL_PORT, context=context) as server:
