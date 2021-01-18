@@ -51,8 +51,19 @@
     <input type="hidden" value="{{ stock.id }}" name = "stock_id">
     <input type="submit" value="Apply Strategy">
   </form>
-  
-        <h2>Prices</h2>
+  <table class="ui very basic collapsing celled inverted table">
+    <thead>
+      <tr><th>News</th>
+      <th>Headlines</th>
+    </tr></thead>
+    <tbody id="links">
+    </tbody>
+</table>
+
+<div hidden id="spinner"></div>
+</div>
+</body>
+        <!-- <h2>Prices</h2>
         <table class="ui selectable inverted table">
             <thead>
                 <tr>
@@ -63,6 +74,7 @@
                     <th>Close</th>
                     <th>Volume</th>
                 </tr> 
+            </thead>
                 <tbody>
                     {% for bar in bars %}
                     <tr>
@@ -76,10 +88,72 @@
                     {% endfor %}
                 </tbody>
               
-            </thead>
-            <tbody>
-        {% endblock content %}
+            
+            <tbody> -->
+    
+        
     </body>
   
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.2/jquery.min.js"></script>
+<script>
+    const spinner = document.getElementById("spinner");
+    
+    spinner.removeAttribute('hidden');
+    fetch('https://api.tickertick.com/feed?q=f3:{{ stock.symbol }}&lang=en&n=50')
+        .then(res => res.json())
+        .then((out) => {
+            spinner.setAttribute('hidden', '');
+            let od = out.stories
+            for (i=0; i < od.length; i++){
+                let link = od[i].url
+                let headline = od[i].title
+                let symbol = od[i].tags[0].toUpperCase()
+                let time = new Date(od[i].time).toLocaleDateString("en-US")
+                let site = od[i].site
+                let picture = od[i].favicon_url
+                // document.querySelector('#links').innerHTML += "<tr><td><a href="+link+">"+headline+"</a></td><td>"+symbol+"</td><td>"+time+"</td><tr><td>"+site+"</td></tr>"
+                document.querySelector('#links').innerHTML += '<tr><td><h4 class="ui image header"><img src="'+picture+'" class="ui mini rounded image"><div class="content">'+site+'<div class="sub_header">'+time+' | '+symbol+'</div></div></h4></td><td><a href="'+link+'">'+headline+'</a></td></tr>'
+            }
+    }).catch(err => console.error(err));
+    </script>
+<style>
+    /* Spinner*/    
+    #spinner:not([hidden]) {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      
+      #spinner::after {
+        content: "";
+        width: 80px;
+        height: 80px;
+        border: 2px solid #f3f3f3;
+        border-top: 3px solid #f25a41;
+        border-radius: 100%;
+        will-change: transform;
+        animation: spin 1s infinite linear
+      }
+      
+      @keyframes spin {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    .content {
+        color: white
+    }
+    .sub_header {
+        color: white
+    }
+    </style>
+    {% endblock content %}
 </html>
-
