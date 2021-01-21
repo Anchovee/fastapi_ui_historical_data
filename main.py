@@ -4,7 +4,11 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
 from datetime import date
 
+import patterns
 import alpaca_trade_api as tradeapi
+import pandas as pd 
+import talib
+
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
@@ -26,7 +30,7 @@ def index(request: Request):
             GROUP BY stock_id
             ORDER BY symbol
         ) WHERE date = (SELECT max(date) FROM stock_price)
-        """)#(datetime.datetime.utcnow().date().isoformat(),))
+        """)
     elif stock_filter =='new_closing_lows':
         cursor.execute("""
         SELECT * FROM (
@@ -159,3 +163,55 @@ def strategies(request: Request):
     orders = api.list_orders(status='all')
 
     return templates.TemplateResponse("orders.html", {'request': request, 'orders': orders})
+
+@app.get('/candles/{pattern}')
+def index(request: Request, pattern):
+    pattern = request.query_params.get('pattern', None)##gets the route func value pair and passes pattern string to variable 
+    connection = sqlite3.connect(config.DB_FILE)
+    connection.row_factory = sqlite3.Row
+    cursor = connection.cursor()
+
+    stocks = []
+    stock_ids = {}
+    with open('qqq.csv') as f:
+        for row in csv.reader(f):
+            stocks += [row[1]]
+
+    cursor.execute("""
+        SELECT * from stock
+    """)
+
+    symbols = cursor.fetchall()
+
+    ## loop through database object
+    for symbol in symbols:
+        if symbol['symbol'] in stocks:
+            ##assign stock name to key value
+            db_symbol = symbol['symbol']
+            ##append key value and assign value value
+            stock_ids[db_symbol] = symbol['id']
+
+    # loop through stock_id dictionary
+    for stock_row in stock_ids:
+        current_id = stock_ids[stock_row]
+        df = pd.read_sql_query(f'SELECT date, stock_id, open, high, low, close FROM stock_price WHERE stock_id == {current_id}', connection) 
+            
+        if pattern:
+            pattern_function = getattr(talib, pattern) #on talib all the functions are named attributes, pass name of function into a variable to call the function
+            try:
+                result = pattern_function(df['open'], df['high'], df['low'], df['close'])
+            
+                last = result.tail(1).values ##get's the last pattern I believe
+                    #print (last)
+
+                    if last > 0:
+                        stocks[symbol][pattern] = 'bullish'
+                    elif last < 0:
+                        stocks[symbol][pattern] = 'bearish'
+                    else:
+                        stocks[symbol][pattern] = None
+                         
+                except:
+                    pass
+                    
+    return templates.TemplateResponse("candles.html", {'patterns': patterns, 'stocks' : stocks, 'current_pattern' : pattern})  
